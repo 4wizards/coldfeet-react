@@ -7,6 +7,16 @@ const client = new W3CWebSocket('ws://coldfeetwebsocket.herokuapp.com/message');
 
 function App() {
 
+    function IsJsonString(str) {
+      try {
+          JSON.parse(str);
+      } catch (e) {
+          return false;
+      }
+      return true;
+  }
+  
+
 const [state, setState] = React.useState([]);
 
 //=======on open=======
@@ -15,10 +25,13 @@ client.onopen = () => {
 };
 //======on message=====
 client.onmessage = (message) => {
+  if(IsJsonString(message.data)){
   var msg = JSON.parse(message.data);
+  msg.key=msg.measurement.measurementTime;
   setState(prevValue=>{
     return[msg, ...prevValue]
   });
+}
 }
 //======get time=======
 function getTime(time){
@@ -37,7 +50,7 @@ return (
           <p>Time</p>
       {state.map(item=>{
         return(
-          <div className="item-container">
+          <div className="item-container" key={item.key}>
           <p>{item.device.deviceName}</p>
           <p>{item.location.locationName}</p>
           <p>{item.measurement.temperature}°C</p>
