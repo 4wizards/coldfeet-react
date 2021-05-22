@@ -67,7 +67,7 @@ return (
         })}
       </div>
       <div className="footer">
-        <p id="footer">Created by HackeHacksmet, JokoLoko, Vincent Vega, ankDaniel</p>
+        <p id="footer">Created by Ahmed Alhasani, Jonathan Koitsalu, Vincent Palma, Daniel Mini Johansson</p>
       </div>
     
       </div>
