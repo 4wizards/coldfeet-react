@@ -28,7 +28,11 @@ client.onmessage = (message) => {
   if(IsJsonString(message.data)){
   var msg = JSON.parse(message.data);
   msg.key=msg.measurement.measurementTime;
+  
   setState(prevValue=>{
+    if(prevValue.length>7){
+      prevValue.pop();
+    }
     return[msg, ...prevValue]
   });
 }
