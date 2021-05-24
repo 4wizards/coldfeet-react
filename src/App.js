@@ -1,7 +1,7 @@
 import React from 'react';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import axios from 'axios';
-import {LineChart, Tooltip, XAxis, Line} from 'recharts';
+import {LineChart, Tooltip, XAxis, Line, YAxis} from 'recharts';
 
 import './App.css';
 import Headers from './headers';
@@ -15,7 +15,8 @@ function App(){
   const [state, setState] = React.useState(
     {
       reload: true,
-      list:[]
+      list:[],
+      reverse:[]
     });
 if(state.reload){
   axios.get('http://coldfeet.herokuapp.com/api/getvalues/7')
@@ -27,7 +28,8 @@ if(state.reload){
           item.time = getTime(item.measurementTime);
         })
         setState({
-          list: data, 
+          list: data,
+          reverse: data.slice().reverse(),
           reload: false
         });
     })
@@ -57,35 +59,29 @@ client.onmessage = (message) => {
     if(prevValue.list.length>7){
       prevValue.list.pop();
     }
+    var list = [msg, ...prevValue.list]
     return{
-      list:[msg, ...prevValue.list]
+      list:list,
+      reverse: list.slice().reverse()
     }
   });
 }}
-function tempForChart(list){
-list.forEach(function(item){
-  var newList = [];
-  newList.push(item.temperature)
-  return newList
-});
-}
-
 
 return (
     <div className="App">
-    {tempForChart(state.list)}
       <div className="content">
     <h1>MVGGruppen</h1>
 
      <LineChart
       width={700}
       height={200}
-      data={state.list.reverse()}
+      data={state.reverse}
       margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
     >
+    <YAxis yAxisId="right" orientation="left" />
     <XAxis dataKey="time" />
     <Tooltip />
-    <Line type="monotone" dataKey="temperature" stroke="#ff7300" strokeWidth={5}yAxisId={0} />
+    <Line type="monotone" dataKey="temperature" stroke="#ff7300" strokeWidth={5} yAxisId="right" />
     
     </LineChart>
     <Headers />
