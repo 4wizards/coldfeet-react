@@ -1,78 +1,84 @@
 import React from 'react';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import axios from 'axios';
+
 import './App.css';
-//import Footer from './Footer';
+import Headers from './headers';
+import Footer from './footer';
+import Items from './items';
+import {IsJsonString, getTime} from './func'
 
 const client = new W3CWebSocket('ws://coldfeetwebsocket.herokuapp.com/message');
 
-function App() {
-
-    function IsJsonString(str) {
-      try {
-          JSON.parse(str);
-      } catch (e) {
-          return false;
-      }
-      return true;
-  }
-  
-
-const [state, setState] = React.useState([]);
-
-//=======on open=======
-client.onopen = () => {
+function App(){
+  const [state, setState] = React.useState(
+    {
+      reload: true,
+      list:[]
+    });
+if(state.reload){
+  axios.get('http://coldfeet.herokuapp.com/api/getvalues/7')
+      .then(function (response) {
+        const data = response.data;
+        data.forEach(item => {item.key = item.measurementTime})
+        setState({
+          list: data, 
+          reload: false
+        });
+    })
+  .catch(function (error) {
+    console.log(error);
+  })
+  .then(function () {
+    console.log("axios done!")
+  });
+}
+  client.onopen = () => {
   console.log('WebSocket Client Connected');
 };
-//======on message=====
+
 client.onmessage = (message) => {
   if(IsJsonString(message.data)){
   var msg = JSON.parse(message.data);
-  msg.key=msg.measurement.measurementTime;
+      msg.key=msg.measurement.measurementTime;
+      msg.deviceName=msg.device.deviceName;
+      msg.locationName=msg.location.locationName;
+      msg.temperature=msg.measurement.temperature;
+      msg.humidity=msg.measurement.humidity;
+      msg.measurementTime=msg.measurement.measurementTime;
   
   setState(prevValue=>{
-    if(prevValue.length>7){
-      prevValue.pop();
+    if(prevValue.list.length>7){
+      prevValue.list.pop();
     }
-    return[msg, ...prevValue]
+    return{
+      list:[msg, ...prevValue.list]
+    }
   });
-}
-}
-//======get time=======
-function getTime(time){
-  return new Date((time)*1000).toLocaleTimeString("sv-SE")
-}
-
+}}
 
 return (
     <div className="App">
     
       <div className="content">
-      <p>Device Name</p>
-          <p>Location</p>
-          <p>Temperature</p>
-          <p>Humidity</p>
-          <p>Time</p>
-      {state.map(item=>{
+     <Headers />
+      {state.list.map(item=>{
         return(
           <div className="item-container" key={item.key}>
-          <p>{item.device.deviceName}</p>
-          <p>{item.location.locationName}</p>
-          <p>{item.measurement.temperature}°C</p>
-          <p>{item.measurement.humidity}%</p>
-          <p>{getTime(item.measurement.measurementTime)}</p>
-
-
+            <Items
+              name={item.deviceName}
+              location={item.locationName}
+              temp={item.temperature}
+              humidity={item.humidity}
+              time={getTime(item.measurementTime)} />
           </div>
           )
         })}
       </div>
-      <div className="footer">
-        <p id="footer">Created by Ahmed Alhasani, Jonathan Koitsalu, Vincent Palma, Daniel Mini Johansson</p>
-      </div>
-    
+      <Footer />
       </div>
     
   );
-}
+};
 
 export default App;
