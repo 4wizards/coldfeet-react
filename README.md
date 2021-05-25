@@ -1,12 +1,8 @@
 # Cold Feet React App for displaying values from ESP32
 
----
-
 ## Assignment for System Integration Course at Nackademin
 
 ## Available Scripts
-
----
 
 ### Install Node from https://nodejs.org/en/download/
 
