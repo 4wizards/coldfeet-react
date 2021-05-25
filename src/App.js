@@ -1,78 +1,110 @@
 import React from 'react';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import axios from 'axios';
+import {ResponsiveContainer, LineChart, Tooltip, XAxis, Line, YAxis} from 'recharts';
+
 import './App.css';
-//import Footer from './Footer';
+import Headers from './headers';
+import Footer from './footer';
+import Items from './items';
+import {IsJsonString, getTime} from './func'
 
 const client = new W3CWebSocket('ws://coldfeetwebsocket.herokuapp.com/message');
 
-function App() {
+function App(){
+  const [state, setState] = React.useState(
+    {
+      reload: true,
+      list:[],
+      reverse:[]
+    });
+if(state.reload){
+  axios.get('http://coldfeet.herokuapp.com/api/getvalues/7')
+      .then(function (response) {
+        const data = response.data;
+        data.forEach(item => {
+          item.key = item.measurementTime;
+          item.time = getTime(item.measurementTime);
+        })
+        setState({
+          list: data,
+          reverse: data.slice().reverse(),
+          reload: false
+        });
+    })
+  .catch(function (error) {
+    console.log(error);
+  })
+  .then(function () {
+    console.log("axios done!")
+  });
+}
 
-    function IsJsonString(str) {
-      try {
-          JSON.parse(str);
-      } catch (e) {
-          return false;
-      }
-      return true;
-  }
-  
-
-const [state, setState] = React.useState([]);
-
-//=======on open=======
-client.onopen = () => {
+  client.onopen = () => {
   console.log('WebSocket Client Connected');
 };
-//======on message=====
+
 client.onmessage = (message) => {
   if(IsJsonString(message.data)){
   var msg = JSON.parse(message.data);
-  msg.key=msg.measurement.measurementTime;
+      msg.key=msg.measurement.measurementTime;
+      msg.deviceName=msg.device.deviceName;
+      msg.locationName=msg.location.locationName;
+      msg.temperature=msg.measurement.temperature;
+      msg.humidity=msg.measurement.humidity;
+      msg.time=getTime(msg.measurement.measurementTime);
+
   
   setState(prevValue=>{
-    if(prevValue.length>7){
-      prevValue.pop();
+    if(prevValue.list.length>7){
+      prevValue.list.pop();
     }
-    return[msg, ...prevValue]
+    var list = [msg, ...prevValue.list]
+    return{
+      list:list,
+      reverse: list.slice().reverse()
+    }
   });
-}
-}
-//======get time=======
-function getTime(time){
-  return new Date((time)*1000).toLocaleTimeString("sv-SE")
-}
-
+}}
 
 return (
     <div className="App">
-    
       <div className="content">
-      <p>Device Name</p>
-          <p>Location</p>
-          <p>Temperature</p>
-          <p>Humidity</p>
-          <p>Time</p>
-      {state.map(item=>{
+      <div className="head">
+        <h1>MVGGruppen</h1>
+      </div>
+    <ResponsiveContainer width="99%" aspect={3}>
+     <LineChart
+      width={700}
+      height={200}
+      data={state.reverse}
+      margin={{ top: 20, right: 0, left: 10, bottom: 5 }}
+    >
+    <YAxis yAxisId="right" orientation="left" />
+    <XAxis dataKey="time" />
+    <Tooltip />
+    <Line type="monotone" dataKey="temperature" stroke="#ff7300" strokeWidth={5} yAxisId="right" />
+    </LineChart>
+   </ResponsiveContainer>
+
+    <Headers />
+      {state.list.map(item=>{
         return(
           <div className="item-container" key={item.key}>
-          <p>{item.device.deviceName}</p>
-          <p>{item.location.locationName}</p>
-          <p>{item.measurement.temperature}°C</p>
-          <p>{item.measurement.humidity}%</p>
-          <p>{getTime(item.measurement.measurementTime)}</p>
-
-
+            <Items
+              name={item.deviceName}
+              location={item.locationName}
+              temp={item.temperature}
+              humidity={item.humidity}
+              time={item.time} />
           </div>
           )
         })}
       </div>
-      <div className="footer">
-        <p id="footer">Created by Ahmed Alhasani, Jonathan Koitsalu, Vincent Palma, Daniel Mini Johansson</p>
-      </div>
-    
+      <Footer />
       </div>
     
   );
-}
+};
 
 export default App;
