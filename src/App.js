@@ -1,6 +1,7 @@
 import React from 'react';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import axios from 'axios';
+import {ResponsiveContainer, LineChart, Tooltip, XAxis, Line, YAxis} from 'recharts';
 
 import './App.css';
 import Headers from './headers';
@@ -14,15 +15,20 @@ function App(){
   const [state, setState] = React.useState(
     {
       reload: true,
-      list:[]
+      list:[],
+      reverse:[]
     });
 if(state.reload){
   axios.get('http://coldfeet.herokuapp.com/api/getvalues/7')
       .then(function (response) {
         const data = response.data;
-        data.forEach(item => {item.key = item.measurementTime})
+        data.forEach(item => {
+          item.key = item.measurementTime;
+          item.time = getTime(item.measurementTime);
+        })
         setState({
-          list: data, 
+          list: data,
+          reverse: data.slice().reverse(),
           reload: false
         });
     })
@@ -33,6 +39,7 @@ if(state.reload){
     console.log("axios done!")
   });
 }
+
   client.onopen = () => {
   console.log('WebSocket Client Connected');
 };
@@ -45,23 +52,42 @@ client.onmessage = (message) => {
       msg.locationName=msg.location.locationName;
       msg.temperature=msg.measurement.temperature;
       msg.humidity=msg.measurement.humidity;
-      msg.measurementTime=msg.measurement.measurementTime;
+      msg.time=getTime(msg.measurement.measurementTime);
+
   
   setState(prevValue=>{
     if(prevValue.list.length>7){
       prevValue.list.pop();
     }
+    var list = [msg, ...prevValue.list]
     return{
-      list:[msg, ...prevValue.list]
+      list:list,
+      reverse: list.slice().reverse()
     }
   });
 }}
 
 return (
     <div className="App">
-    
       <div className="content">
-     <Headers />
+      <div className="head">
+        <h1>MVGGruppen</h1>
+      </div>
+    <ResponsiveContainer width="99%" aspect={3}>
+     <LineChart
+      width={700}
+      height={200}
+      data={state.reverse}
+      margin={{ top: 20, right: 0, left: 10, bottom: 5 }}
+    >
+    <YAxis yAxisId="right" orientation="left" />
+    <XAxis dataKey="time" />
+    <Tooltip />
+    <Line type="monotone" dataKey="temperature" stroke="#ff7300" strokeWidth={5} yAxisId="right" />
+    </LineChart>
+   </ResponsiveContainer>
+
+    <Headers />
       {state.list.map(item=>{
         return(
           <div className="item-container" key={item.key}>
@@ -70,7 +96,7 @@ return (
               location={item.locationName}
               temp={item.temperature}
               humidity={item.humidity}
-              time={getTime(item.measurementTime)} />
+              time={item.time} />
           </div>
           )
         })}
