@@ -1,7 +1,7 @@
 import React from 'react';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import axios from 'axios';
-import {LineChart, Tooltip, XAxis, Line, YAxis} from 'recharts';
+import {ResponsiveContainer, LineChart, Tooltip, XAxis, Line, YAxis} from 'recharts';
 
 import './App.css';
 import Headers from './headers';
@@ -23,7 +23,6 @@ if(state.reload){
       .then(function (response) {
         const data = response.data;
         data.forEach(item => {
-          console.log(item)
           item.key = item.measurementTime;
           item.time = getTime(item.measurementTime);
         })
@@ -40,6 +39,7 @@ if(state.reload){
     console.log("axios done!")
   });
 }
+
   client.onopen = () => {
   console.log('WebSocket Client Connected');
 };
@@ -47,13 +47,13 @@ if(state.reload){
 client.onmessage = (message) => {
   if(IsJsonString(message.data)){
   var msg = JSON.parse(message.data);
-  console.log(msg);
       msg.key=msg.measurement.measurementTime;
       msg.deviceName=msg.device.deviceName;
       msg.locationName=msg.location.locationName;
       msg.temperature=msg.measurement.temperature;
       msg.humidity=msg.measurement.humidity;
       msg.time=getTime(msg.measurement.measurementTime);
+
   
   setState(prevValue=>{
     if(prevValue.list.length>7){
@@ -70,20 +70,23 @@ client.onmessage = (message) => {
 return (
     <div className="App">
       <div className="content">
-    <h1>MVGGruppen</h1>
-
+      <div className="head">
+        <h1>MVGGruppen</h1>
+      </div>
+    <ResponsiveContainer width="99%" aspect={3}>
      <LineChart
       width={700}
       height={200}
       data={state.reverse}
-      margin={{ top: 20, right: 20, left: 10, bottom: 5 }}
+      margin={{ top: 20, right: 0, left: 10, bottom: 5 }}
     >
     <YAxis yAxisId="right" orientation="left" />
     <XAxis dataKey="time" />
     <Tooltip />
     <Line type="monotone" dataKey="temperature" stroke="#ff7300" strokeWidth={5} yAxisId="right" />
-    
     </LineChart>
+   </ResponsiveContainer>
+
     <Headers />
       {state.list.map(item=>{
         return(
