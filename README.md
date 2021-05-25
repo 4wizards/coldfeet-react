@@ -2,7 +2,7 @@
 
 ## Assignment for System Integration Course at Nackademin
 
-## Available Scripts
+## Run locally
 
 ### Install Node from https://nodejs.org/en/download/
 
